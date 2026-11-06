@@ -1,0 +1,21 @@
+# Core app
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic-settings>=2.3
+openai>=1.109,<2
+qdrant-client>=1.12
+portalocker>=2.8
+rank-bm25>=0.2.2
+pypdf>=5.0
+
+# Observability + evaluation
+langfuse>=5.1,<6          # OTel-based SDK (start_as_current_observation, propagate_attributes, run_experiment)
+ragas==0.4.3              # metrics live in ragas.metrics.collections
+# ragas 0.4.3 imports langchain_community.chat_models.vertexai, which langchain-community 0.4.x removed.
+# Keep this pin until ragas drops that import, otherwise `import ragas` fails.
+langchain-community>=0.3.31,<0.4
+
+# Local embeddings (no API key needed)
+fastembed>=0.4
+truststore>=0.9

@@ -1,0 +1,117 @@
+<svg viewBox="0 0 1040 640" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#667085"/>
+    </marker>
+    <style>
+      .box{fill:#fff;stroke:#98a2b3;stroke-width:1.2;rx:8}
+      .req{fill:#eef4ff;stroke:#2f5bea}
+      .obs{fill:#f3eefe;stroke:#7a4de0}
+      .evl{fill:#ecfdf3;stroke:#1f9d55}
+      .off{fill:#fff6e5;stroke:#d9822b}
+      .t{fill:#1c2230} .m{fill:#667085;font-size:11.5px} .h{font-weight:600;font-size:14px}
+      .ln{stroke:#667085;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .dash{stroke-dasharray:5 4}
+      .lane{font-size:12px;font-weight:700;letter-spacing:.06em;fill:#667085}
+    </style>
+  </defs>
+  <rect width="1040" height="640" fill="#fafbfc"/>
+
+  <!-- lanes -->
+  <text class="lane" x="24" y="28">1 · REQUEST PATH  (user-facing, synchronous)</text>
+  <text class="lane" x="24" y="300">2 · ONLINE EVALUATION  (asynchronous, never in the request path)</text>
+  <text class="lane" x="24" y="470">3 · OFFLINE EVALUATION  (golden dataset experiments)</text>
+
+  <!-- request path -->
+  <rect class="box req" x="24" y="44" width="120" height="64"/>
+  <text class="t h" x="84" y="72" text-anchor="middle">User / UI</text>
+  <text class="m" x="84" y="92" text-anchor="middle">upload · chat</text>
+
+  <rect class="box req" x="184" y="44" width="150" height="64"/>
+  <text class="t h" x="259" y="72" text-anchor="middle">FastAPI</text>
+  <text class="m" x="259" y="92" text-anchor="middle">/documents · /chat</text>
+
+  <rect class="box req" x="374" y="44" width="150" height="64"/>
+  <text class="t h" x="449" y="68" text-anchor="middle">Retrieval</text>
+  <text class="m" x="449" y="86" text-anchor="middle">embed → dense (+BM25)</text>
+  <text class="m" x="449" y="100" text-anchor="middle">→ RRF → rerank</text>
+
+  <rect class="box req" x="564" y="44" width="140" height="64"/>
+  <text class="t h" x="634" y="68" text-anchor="middle">Context</text>
+  <text class="m" x="634" y="86" text-anchor="middle">numbered passages</text>
+  <text class="m" x="634" y="100" text-anchor="middle">+ prompt vN</text>
+
+  <rect class="box req" x="744" y="44" width="130" height="64"/>
+  <text class="t h" x="809" y="68" text-anchor="middle">LLM</text>
+  <text class="m" x="809" y="86" text-anchor="middle">answer + [n] cites</text>
+  <text class="m" x="809" y="100" text-anchor="middle">or abstain</text>
+
+  <path class="ln" d="M144,76 H184"/><path class="ln" d="M334,76 H374"/><path class="ln" d="M524,76 H564"/>
+  <path class="ln" d="M704,76 H744"/>
+
+  <rect class="box" x="374" y="150" width="150" height="56"/>
+  <text class="t h" x="449" y="174" text-anchor="middle">Qdrant</text>
+  <text class="m" x="449" y="192" text-anchor="middle">chunks · doc id/version</text>
+  <path class="ln dash" d="M449,150 V108" style="marker-end:url(#a)"/>
+  <path class="ln" d="M259,108 V178 H374" />
+  <text class="m" x="266" y="148">ingest: parse →</text>
+  <text class="m" x="266" y="162">chunk → embed</text>
+
+  <!-- langfuse -->
+  <rect class="box obs" x="744" y="150" width="270" height="110"/>
+  <text class="t h" x="879" y="174" text-anchor="middle">Langfuse</text>
+  <text class="m" x="879" y="194" text-anchor="middle">trace per request: rag-chat → retrieval,</text>
+  <text class="m" x="879" y="209" text-anchor="middle">embed, vector, bm25, fusion, rerank,</text>
+  <text class="m" x="879" y="224" text-anchor="middle">context-assembly, generation, postprocess</text>
+  <text class="m" x="879" y="244" text-anchor="middle">+ scores · datasets · experiments · dashboards</text>
+  <path class="ln dash" d="M634,108 V128 H800 V150"/>
+  <path class="ln dash" d="M809,108 V150"/>
+  <text class="m" x="544" y="146">spans: model, usage, cost,</text>
+  <text class="m" x="544" y="160">chunk ids, scores, errors</text>
+
+  <!-- queue -->
+  <rect class="box evl" x="374" y="326" width="150" height="64"/>
+  <text class="t h" x="449" y="352" text-anchor="middle">Eval queue</text>
+  <text class="m" x="449" y="370" text-anchor="middle">SQLite · retries · backoff</text>
+  <path class="ln" d="M210,108 V358 H374"/>
+  <text class="m" x="218" y="378">enqueue (trace id, Q,</text>
+  <text class="m" x="218" y="392">answer, contexts) after</text>
+  <text class="m" x="218" y="406">the answer is built</text>
+
+  <rect class="box evl" x="574" y="326" width="200" height="64"/>
+  <text class="t h" x="674" y="350" text-anchor="middle">Online worker</text>
+  <text class="m" x="674" y="368" text-anchor="middle">Ragas faithfulness · relevancy</text>
+  <text class="m" x="674" y="382" text-anchor="middle">+ citation / unsupported checks</text>
+  <path class="ln" d="M524,358 H574"/>
+  <path class="ln" d="M774,358 H879 V260"/>
+  <text class="m" x="790" y="350">scores → original trace</text>
+  <text class="m" x="790" y="410">status: COMPLETED | PARTIAL | FAILED</text>
+  <text class="m" x="790" y="424">evaluator version on every score</text>
+
+  <!-- offline -->
+  <rect class="box off" x="24" y="494" width="150" height="64"/>
+  <text class="t h" x="99" y="520" text-anchor="middle">Golden dataset</text>
+  <text class="m" x="99" y="538" text-anchor="middle">65 Q · JSONL · versioned</text>
+
+  <rect class="box off" x="214" y="494" width="170" height="64"/>
+  <text class="t h" x="299" y="520" text-anchor="middle">Experiment runner</text>
+  <text class="m" x="299" y="538" text-anchor="middle">configs + sweeps</text>
+
+  <rect class="box off" x="424" y="494" width="160" height="64"/>
+  <text class="t h" x="504" y="520" text-anchor="middle">RAG pipeline</text>
+  <text class="m" x="504" y="538" text-anchor="middle">same code, in-memory index</text>
+
+  <rect class="box off" x="624" y="494" width="150" height="64"/>
+  <text class="t h" x="699" y="520" text-anchor="middle">Scorer</text>
+  <text class="m" x="699" y="538" text-anchor="middle">all 16 metrics + gold</text>
+
+  <rect class="box off" x="814" y="494" width="200" height="64"/>
+  <text class="t h" x="914" y="518" text-anchor="middle">results/*.json + compare</text>
+  <text class="m" x="914" y="536" text-anchor="middle">regressions · failures → traces</text>
+
+  <path class="ln" d="M174,526 H214"/><path class="ln" d="M384,526 H424"/><path class="ln" d="M584,526 H624"/>
+  <path class="ln" d="M774,526 H814"/>
+  <path class="ln dash" d="M504,494 V450 H1030 V210 H1014"/>
+  <text class="m" x="560" y="446">experiment run (traces + scores) → Langfuse Datasets / Experiments</text>
+  <text class="m" x="24" y="600">Legend: blue = request path · purple = Langfuse · green = online eval · orange = offline eval · dashed = telemetry</text>
+</svg>

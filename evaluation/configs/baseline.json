@@ -1,0 +1,11 @@
+{
+  "name": "baseline",
+  "llm_model": "gpt-4o-mini",
+  "embedding_model": "text-embedding-3-small",
+  "chunk_size": 800,
+  "chunk_overlap": 100,
+  "top_k": 4,
+  "hybrid": false,
+  "reranker": "none",
+  "prompt_version": "v1"
+}

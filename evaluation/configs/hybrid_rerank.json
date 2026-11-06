@@ -1,0 +1,11 @@
+{
+  "name": "hybrid_rerank",
+  "llm_model": "gpt-4o-mini",
+  "embedding_model": "text-embedding-3-small",
+  "chunk_size": 400,
+  "chunk_overlap": 60,
+  "top_k": 4,
+  "hybrid": true,
+  "reranker": "lexical",
+  "prompt_version": "v2"
+}

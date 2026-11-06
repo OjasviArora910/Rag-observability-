@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Chat</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1c2230; --muted:#667085; --line:#e4e7ec; --accent:#2f5bea; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12151c; --card:#1b2029; --ink:#e8ebf2; --muted:#98a2b3; --line:#2a303c; --accent:#6c8cff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width:1000px; margin:0 auto; padding:16px; display:grid; gap:16px; grid-template-columns: 280px 1fr; }
+  @media (max-width:760px) { main { grid-template-columns:1fr; } }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  h2 { margin:0 0 10px; font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  button { background:var(--accent); color:#fff; border:0; border-radius:7px; padding:8px 12px; cursor:pointer; font:inherit; }
+  button.ghost { background:transparent; color:var(--muted); border:1px solid var(--line); padding:3px 8px; font-size:12px; }
+  input[type=text] { flex:1; padding:9px 10px; border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--ink); font:inherit; }
+  .doc { display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid var(--line); font-size:13px; }
+  .doc small { color:var(--muted); display:block; }
+  #log { height:52vh; overflow:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; }
+  .msg { padding:9px 12px; border-radius:10px; max-width:88%; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:var(--accent); color:#fff; }
+  .bot { align-self:flex-start; background:var(--bg); border:1px solid var(--line); }
+  .meta { font-size:12px; color:var(--muted); margin-top:6px; }
+  .row { display:flex; gap:8px; margin-top:12px; }
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <h2>Documents</h2>
+    <input id="file" type="file" accept=".pdf,.txt,.md">
+    <div class="row"><button id="upload">Upload</button></div>
+    <div id="docs" style="margin-top:12px"></div>
+  </section>
+  <section>
+    <h2>Chat</h2>
+    <div id="log"></div>
+    <div class="row">
+      <input id="q" type="text" placeholder="Ask about your documents…" autocomplete="off">
+      <button id="send">Send</button>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const session = crypto.randomUUID();
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function loadDocs() {
+  const docs = await (await fetch('/api/v1/documents')).json();
+  $('docs').innerHTML = docs.map(d => `<div class="doc"><div>${esc(d.filename)}<small>${d.status}${d.chunk_count ? ' · ' + d.chunk_count + ' chunks' : ''}${d.error_message ? ' · ' + esc(d.error_message) : ''}</small></div><button class="ghost" data-del="${d.id}">Delete</button></div>`).join('') || '<small>No documents yet.</small>';
+  if (docs.some(d => d.status === 'Processing')) setTimeout(loadDocs, 1500);
+}
+$('docs').addEventListener('click', async e => {
+  const id = e.target.dataset.del; if (!id) return;
+  await fetch('/api/v1/documents/' + id, { method: 'DELETE' }); loadDocs();
+});
+$('upload').onclick = async () => {
+  const f = $('file').files[0]; if (!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  const r = await fetch('/api/v1/documents/upload', { method: 'POST', body: fd });
+  if (!r.ok) alert((await r.json()).detail); $('file').value = ''; loadDocs();
+};
+
+function add(cls, html) { const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = html; $('log').appendChild(d); $('log').scrollTop = 1e9; return d; }
+async function send() {
+  const q = $('q').value.trim(); if (!q) return; $('q').value = '';
+  add('user', esc(q)); const pending = add('bot', '…');
+  try {
+    const r = await fetch('/api/v1/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ question: q, session_id: session }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.detail || r.statusText);
+    const cites = j.citations.map(c => `[${c.number}] ${esc(c.filename)}${c.page ? ' p.' + c.page : ''}`).join(' · ');
+    pending.innerHTML = esc(j.answer) + `<div class="meta">${cites || (j.abstained ? 'no supporting passage' : '')} · ${j.latency_ms} ms
+      <button class="ghost" data-fb="1" data-trace="${j.trace_id || ''}">👍</button> <button class="ghost" data-fb="0" data-trace="${j.trace_id || ''}">👎</button></div>`;
+  } catch (e) { pending.textContent = 'Error: ' + e.message; }
+}
+$('log').addEventListener('click', async e => {
+  const t = e.target.dataset.trace; if (!t) return;
+  await fetch('/api/v1/feedback', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ trace_id: t, thumbs_up: e.target.dataset.fb === '1' }) });
+  e.target.textContent += ' ✓';
+});
+$('send').onclick = send; $('q').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+loadDocs();
+</script>
+</body>
+</html>
